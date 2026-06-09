@@ -1,58 +1,84 @@
-# Import the QueryBase class
-# YOUR CODE HERE
-
-# Import dependencies for sql execution
-#### YOUR CODE HERE
-
-# Create a subclass of QueryBase
-# called  `Team`
-#### YOUR CODE HERE
-
-    # Set the class attribute `name`
-    # to the string "team"
-    #### YOUR CODE HERE
+from .query_base import QueryBase
+from .sql_execution import query
 
 
-    # Define a `names` method
-    # that receives no arguments
-    # This method should return
-    # a list of tuples from an sql execution
-    #### YOUR CODE HERE
-        
-        # Query 5
-        # Write an SQL query that selects
-        # the team_name and team_id columns
-        # from the team table for all teams
-        # in the database
-        #### YOUR CODE HERE
-    
+class Team(QueryBase):
+    """
+    SQL query class for team entities.
 
-    # Define a `username` method
-    # that receives an ID argument
-    # This method should return
-    # a list of tuples from an sql execution
-    #### YOUR CODE HERE
+    Inherits shared queries from QueryBase and adds team-specific
+    queries for listing teams and retrieving a single team's name.
 
-        # Query 6
-        # Write an SQL query
-        # that selects the team_name column
-        # Use f-string formatting and a WHERE filter
-        # to only return the team name related to
-        # the ID argument
-        #### YOUR CODE HERE
+    Attributes
+    ----------
+    name : str
+        Entity name used in f-string SQL queries.  Always 'team'.
+    """
 
+    name = 'team'
 
-    # Below is method with an SQL query
-    # This SQL query generates the data needed for
-    # the machine learning model.
-    # Without editing the query, alter this method
-    # so when it is called, a pandas dataframe
-    # is returns containing the execution of
-    # the sql query
-    #### YOUR CODE HERE
-    def model_data(self, id):
+    @query
+    def names(self):
+        """
+        Return all teams as (team_name, team_id) tuples.
 
+        QUERY 5 — Selects team_name and team_id for all rows in the
+        team table.
+
+        Returns
+        -------
+        list of tuple
+            Each tuple is (team_name: str, team_id: int).
+        """
+        return """
+            SELECT team_name, team_id
+            FROM team
+            ORDER BY team_name
+        """
+
+    @query
+    def username(self, id):
+        """
+        Return the name of a single team.
+
+        QUERY 6 — Selects team_name for the team whose team_id matches *id*.
+
+        Parameters
+        ----------
+        id : int or str
+            The team's primary key.
+
+        Returns
+        -------
+        list of tuple
+            Single-element list containing a one-element tuple with the
+            team name.
+        """
         return f"""
+            SELECT team_name
+            FROM team
+            WHERE team_id = {id}
+        """
+
+    def model_data(self, id):
+        """
+        Return per-employee aggregated event counts for the ML model.
+
+        Sums total positive and negative events per employee within the
+        team and returns a pandas DataFrame with one row per employee.
+
+        Parameters
+        ----------
+        id : int or str
+            The team's primary key.
+
+        Returns
+        -------
+        pandas.DataFrame
+            Columns: positive_events, negative_events
+            (one row per team member).
+        """
+        return self.pandas_query(f"""
             SELECT positive_events, negative_events FROM (
                     SELECT employee_id
                          , SUM(positive_events) positive_events
@@ -63,4 +89,4 @@
                     WHERE {self.name}.{self.name}_id = {id}
                     GROUP BY employee_id
                    )
-                """
+                """)

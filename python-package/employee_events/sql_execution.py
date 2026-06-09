@@ -3,31 +3,51 @@ from pathlib import Path
 from functools import wraps
 import pandas as pd
 
-# Using pathlib, create a `db_path` variable
-# that points to the absolute path for the `employee_events.db` file
-#### YOUR CODE HERE
+# Absolute path to the employee_events.db file
+# (packaged alongside this module)
+db_path = Path(__file__).resolve().parent / 'employee_events.db'
 
 
 # OPTION 1: MIXIN
-# Define a class called `QueryMixin`
 class QueryMixin:
-    
-    # Define a method named `pandas_query`
-    # that receives an sql query as a string
-    # and returns the query's result
-    # as a pandas dataframe
-    #### YOUR CODE HERE
+    """
+    Mixin that provides SQL execution helpers.
 
-    # Define a method named `query`
-    # that receives an sql_query as a string
-    # and returns the query's result as
-    # a list of tuples. (You will need
-    # to use an sqlite3 cursor)
-    #### YOUR CODE HERE
-    
+    Methods
+    -------
+    pandas_query(sql_query)
+        Execute a SQL query and return results as a pandas DataFrame.
+    query(sql_query)
+        Execute a SQL query and return results as a list of tuples.
+    """
 
- 
- # Leave this code unchanged
+    def pandas_query(self, sql_query):
+        """
+        Execute *sql_query* against employee_events.db.
+
+        Opens a connection, runs the query via pandas.read_sql,
+        closes the connection, and returns the resulting DataFrame.
+        """
+        connection = connect(db_path)
+        df = pd.read_sql(sql_query, connection)
+        connection.close()
+        return df
+
+    def query(self, sql_query):
+        """
+        Execute *sql_query* against employee_events.db.
+
+        Opens a connection, runs the query via a cursor, closes the
+        connection, and returns results as a list of tuples.
+        """
+        connection = connect(db_path)
+        cursor = connection.cursor()
+        result = cursor.execute(sql_query).fetchall()
+        connection.close()
+        return result
+
+
+# Leave this code unchanged
 def query(func):
     """
     Decorator that runs a standard sql execution
@@ -42,5 +62,5 @@ def query(func):
         result = cursor.execute(query_string).fetchall()
         connection.close()
         return result
-    
+
     return run_query
